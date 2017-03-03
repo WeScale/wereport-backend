@@ -54,7 +54,7 @@ func RepoFindContrat(cluster *gocql.ClusterConfig, id gocql.UUID) Contrat {
 	if err := session.Query(`SELECT ID, Consultant, Tjm, Bdc, Debut, Fin FROM contrat WHERE id = ? `,
 		id).Consistency(gocql.One).Scan(&unique.ID, &unique.Consultant, &unique.Tjm, &unique.Bdc, &unique.Debut, &unique.Fin); err != nil {
 		log.Fatal(err)
-		return nil
+		return Contrat{}
 	}
 
 	// return empty Todo if not found

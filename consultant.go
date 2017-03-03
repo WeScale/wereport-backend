@@ -24,7 +24,7 @@ type Consultants []Consultant
 // LastName text,
 // PRIMARY KEY(id))
 
-func RepoConsultant(cluster *gocql.ClusterConfig) Consultants {
+func RepoConsultants(cluster *gocql.ClusterConfig) Consultants {
 
 	var unique Consultant
 	var list Consultants
@@ -48,7 +48,7 @@ func RepoFindConsultant(cluster *gocql.ClusterConfig, id gocql.UUID) Consultant 
 	if err := session.Query(`SELECT ID, FirstName, LastName FROM consultant WHERE id = ? `,
 		id).Consistency(gocql.One).Scan(&unique.ID, &unique.FirstName, &unique.LastName); err != nil {
 		log.Fatal(err)
-		return nil
+		return Consultant{}
 	}
 
 	// return empty Todo if not found

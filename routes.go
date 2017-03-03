@@ -38,4 +38,22 @@ var routes = Routes{
 		"/clients",
 		ClientCreate,
 	},
+	Route{
+		"ConsultantIndex",
+		"GET",
+		"/consultants",
+		GetConsultants,
+	},
+	Route{
+		"ConsultantShow",
+		"GET",
+		"/consultants/{consultantid}",
+		GetOneConsultant,
+	},
+	Route{
+		"ConsultantCreate",
+		"POST",
+		"/consultants",
+		ConsultantCreate,
+	},
 }

@@ -2,8 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
-	"html"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -12,28 +10,25 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func Index(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Index, %q", html.EscapeString(r.URL.Path))
-}
-
-func GetClients(w http.ResponseWriter, r *http.Request) {
-	clients = RepoClients(cluster)
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+func GetConsultants(w http.ResponseWriter, r *http.Request) {
+	var Consultants Consultants
+	Consultants = RepoConsultants(cluster)
+	w.Header().Set("Content-Typea", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
-	if err := json.NewEncoder(w).Encode(clients); err != nil {
+	if err := json.NewEncoder(w).Encode(Consultants); err != nil {
 		panic(err)
 	}
 }
 
-func GetOneClient(w http.ResponseWriter, r *http.Request) {
+func GetOneConsultant(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	clientID, err := gocql.ParseUUID(vars["clientid"])
+	ConsultantID, err := gocql.ParseUUID(vars["consultantid"])
 	if err != nil {
 		panic(err)
 	}
-	var clt Client
-	clt = RepoFindClient(cluster, clientID)
+	var clt Consultant
+	clt = RepoFindConsultant(cluster, ConsultantID)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
@@ -42,8 +37,8 @@ func GetOneClient(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func ClientCreate(w http.ResponseWriter, r *http.Request) {
-	var client Client
+func ConsultantCreate(w http.ResponseWriter, r *http.Request) {
+	var clt Consultant
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
 		panic(err)
@@ -51,7 +46,7 @@ func ClientCreate(w http.ResponseWriter, r *http.Request) {
 	if err := r.Body.Close(); err != nil {
 		panic(err)
 	}
-	if err := json.Unmarshal(body, &client); err != nil {
+	if err := json.Unmarshal(body, &clt); err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
 		if err := json.NewEncoder(w).Encode(err); err != nil {
@@ -59,7 +54,7 @@ func ClientCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	t := RepoCreateClient(cluster, client)
+	t := RepoCreateConsultant(cluster, clt)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(t); err != nil {
