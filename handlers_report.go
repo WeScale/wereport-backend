@@ -10,25 +10,25 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func GetClients(w http.ResponseWriter, r *http.Request) {
-	var clients Clients
-	clients = RepoClients()
+func GetReports(w http.ResponseWriter, r *http.Request) {
+	var Reports Reports
+	Reports = RepoReports()
 	w.Header().Set("Content-Typea", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
-	if err := json.NewEncoder(w).Encode(clients); err != nil {
+	if err := json.NewEncoder(w).Encode(Reports); err != nil {
 		panic(err)
 	}
 }
 
-func GetOneClient(w http.ResponseWriter, r *http.Request) {
+func GetOneReport(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	clientID, err := gocql.ParseUUID(vars["id"])
+	reportID, err := gocql.ParseUUID(vars["id"])
 	if err != nil {
 		panic(err)
 	}
-	var clt Client
-	clt = RepoFindClient(clientID)
+	var clt Report
+	clt = RepoFindReport(reportID)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
@@ -37,8 +37,8 @@ func GetOneClient(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func ClientCreate(w http.ResponseWriter, r *http.Request) {
-	var client Client
+func ReportCreate(w http.ResponseWriter, r *http.Request) {
+	var clt Report
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
 		panic(err)
@@ -46,7 +46,7 @@ func ClientCreate(w http.ResponseWriter, r *http.Request) {
 	if err := r.Body.Close(); err != nil {
 		panic(err)
 	}
-	if err := json.Unmarshal(body, &client); err != nil {
+	if err := json.Unmarshal(body, &clt); err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
 		if err := json.NewEncoder(w).Encode(err); err != nil {
@@ -54,7 +54,7 @@ func ClientCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	t := RepoCreateClient(client)
+	t := RepoCreateReport(clt)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(t); err != nil {

@@ -29,7 +29,7 @@ var routes = Routes{
 	Route{
 		"ClientShow",
 		"GET",
-		"/clients/{clientid}",
+		"/clients/{id}",
 		GetOneClient,
 	},
 	Route{
@@ -47,7 +47,7 @@ var routes = Routes{
 	Route{
 		"ConsultantShow",
 		"GET",
-		"/consultants/{consultantid}",
+		"/consultants/{id}",
 		GetOneConsultant,
 	},
 	Route{
@@ -55,5 +55,77 @@ var routes = Routes{
 		"POST",
 		"/consultants",
 		ConsultantCreate,
+	},
+	Route{
+		"FactureIndex",
+		"GET",
+		"/factures",
+		GetFactures,
+	},
+	Route{
+		"FactureShow",
+		"GET",
+		"/factures/{id}",
+		GetOneFacture,
+	},
+	Route{
+		"FactureCreate",
+		"POST",
+		"/factures",
+		FactureCreate,
+	},
+	Route{
+		"ReportIndex",
+		"GET",
+		"/reports",
+		GetReports,
+	},
+	Route{
+		"ReportShow",
+		"GET",
+		"/reports/{id}",
+		GetOneReport,
+	},
+	Route{
+		"ReportCreate",
+		"POST",
+		"/reports",
+		ReportCreate,
+	},
+	Route{
+		"ReportDayIndex",
+		"GET",
+		"/reportdays",
+		GetReportDays,
+	},
+	Route{
+		"ReportDayShow",
+		"GET",
+		"/reportsdays/{id}",
+		GetOneReportDay,
+	},
+	Route{
+		"ReportDayCreate",
+		"POST",
+		"/reportsdays",
+		ReportDayCreate,
+	},
+	Route{
+		"ContratIndex",
+		"GET",
+		"/contrats",
+		GetContrats,
+	},
+	Route{
+		"ContratShow",
+		"GET",
+		"/contrats/{id}",
+		GetOneContrat,
+	},
+	Route{
+		"ContratCreate",
+		"POST",
+		"/contrats",
+		ContratCreate,
 	},
 }

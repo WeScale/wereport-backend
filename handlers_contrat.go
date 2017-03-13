@@ -6,29 +6,31 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"log"
+
 	"github.com/gocql/gocql"
 	"github.com/gorilla/mux"
 )
 
-func GetConsultants(w http.ResponseWriter, r *http.Request) {
-	var consultants Consultants
-	consultants = RepoConsultants()
+func GetContrats(w http.ResponseWriter, r *http.Request) {
+	var Contrats Contrats
+	Contrats = RepoContrats()
 	w.Header().Set("Content-Typea", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
-	if err := json.NewEncoder(w).Encode(consultants); err != nil {
+	if err := json.NewEncoder(w).Encode(Contrats); err != nil {
 		panic(err)
 	}
 }
 
-func GetOneConsultant(w http.ResponseWriter, r *http.Request) {
+func GetOneContrat(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	consultantID, err := gocql.ParseUUID(vars["id"])
+	contratID, err := gocql.ParseUUID(vars["id"])
 	if err != nil {
 		panic(err)
 	}
-	var clt Consultant
-	clt = RepoFindConsultant(consultantID)
+	var clt Contrat
+	clt = RepoFindContrat(contratID)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
@@ -37,8 +39,8 @@ func GetOneConsultant(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func ConsultantCreate(w http.ResponseWriter, r *http.Request) {
-	var clt Consultant
+func ContratCreate(w http.ResponseWriter, r *http.Request) {
+	var clt Contrat
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
 		panic(err)
@@ -47,17 +49,29 @@ func ConsultantCreate(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	if err := json.Unmarshal(body, &clt); err != nil {
+		log.Println("error mapping")
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
 		if err := json.NewEncoder(w).Encode(err); err != nil {
 			panic(err)
 		}
-	}
+	} else {
+		var status int
+		contrat := RepoCreateContrat(clt)
 
-	t := RepoCreateConsultant(clt)
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(t); err != nil {
-		panic(err)
+		if contrat == (Contrat{}) {
+			status = http.StatusBadRequest
+		} else {
+			status = http.StatusCreated
+		}
+
+		log.Println(contrat)
+		contratdata := MarshalHateoas(contrat)
+
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(status)
+		if err := json.NewEncoder(w).Encode(contratdata); err != nil {
+			panic(err)
+		}
 	}
 }

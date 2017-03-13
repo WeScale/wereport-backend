@@ -24,12 +24,19 @@ type Consultants []Consultant
 // LastName text,
 // PRIMARY KEY(id))
 
-func RepoConsultants(cluster *gocql.ClusterConfig) Consultants {
+func init() {
+
+	log.Printf("Create table consultant")
+	if err := session.Query(`CREATE TABLE IF NOT EXISTS we.consultant(ID UUID, FirstName text, LastName text, PRIMARY KEY(id))`).Exec(); err != nil {
+		log.Println(err)
+	}
+}
+
+func RepoConsultants() Consultants {
 
 	var unique Consultant
 	var list Consultants
 
-	session, _ := cluster.CreateSession()
 	iter := session.Query(`SELECT ID, FirstName, LastName FROM consultant`).Iter()
 	for iter.Scan(&unique.ID, &unique.FirstName, &unique.LastName) {
 		list = append(list, unique)
@@ -41,13 +48,12 @@ func RepoConsultants(cluster *gocql.ClusterConfig) Consultants {
 }
 
 //RepoFindConsultant find one client
-func RepoFindConsultant(cluster *gocql.ClusterConfig, id gocql.UUID) Consultant {
+func RepoFindConsultant(id gocql.UUID) Consultant {
 
 	var unique Consultant
-	session, _ := cluster.CreateSession()
-	if err := session.Query(`SELECT ID, FirstName, LastName FROM consultant WHERE id = ? `,
+	if err := session.Query(`SELECT ID, FirstName, LastName FROM consultant WHERE ID = ? `,
 		id).Consistency(gocql.One).Scan(&unique.ID, &unique.FirstName, &unique.LastName); err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return Consultant{}
 	}
 
@@ -56,23 +62,18 @@ func RepoFindConsultant(cluster *gocql.ClusterConfig, id gocql.UUID) Consultant 
 }
 
 //RepoCreateConsultant create client
-func RepoCreateConsultant(cluster *gocql.ClusterConfig, t Consultant) Consultant {
+func RepoCreateConsultant(unique Consultant) Consultant {
 
-	session, err := cluster.CreateSession()
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	unique.ID = gocql.TimeUUID()
 	if err := session.Query(`INSERT INTO consultant (ID, FirstName, LastName) VALUES (?, ?, ?)`,
-		gocql.TimeUUID(), t.FirstName, t.LastName).Exec(); err != nil {
+		unique.ID, unique.FirstName, unique.LastName).Exec(); err != nil {
 		log.Fatal(err)
 	}
 
-	return t
+	return unique
 }
 
-func RepoDestroyConsultant(cluster *gocql.ClusterConfig, id gocql.UUID) error {
+func RepoDestroyConsultant(id gocql.UUID) error {
 
 	//Todo
 
