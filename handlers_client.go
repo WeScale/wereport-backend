@@ -13,7 +13,7 @@ import (
 func GetClients(w http.ResponseWriter, r *http.Request) {
 	var clients Clients
 	clients = RepoClients()
-	w.Header().Set("Content-Typea", "application/json; charset=UTF-8")
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
 	if err := json.NewEncoder(w).Encode(clients); err != nil {

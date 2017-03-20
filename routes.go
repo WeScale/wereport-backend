@@ -21,6 +21,12 @@ var routes = Routes{
 		Index,
 	},
 	Route{
+		"Connect",
+		"GET",
+		"/connect",
+		Connect,
+	},
+	Route{
 		"ClientsIndex",
 		"GET",
 		"/clients",

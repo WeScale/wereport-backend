@@ -15,7 +15,7 @@ import (
 func GetContrats(w http.ResponseWriter, r *http.Request) {
 	var Contrats Contrats
 	Contrats = RepoContrats()
-	w.Header().Set("Content-Typea", "application/json; charset=UTF-8")
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
 	if err := json.NewEncoder(w).Encode(Contrats); err != nil {
