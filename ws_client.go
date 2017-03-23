@@ -11,6 +11,7 @@ import (
 var listSocketClient []*websocket.Conn
 
 func ClientsWebsocket(ws *websocket.Conn) {
+	log.Println("add client for clientsocket")
 	listSocketClient = append(listSocketClient, ws)
 	for {
 		var reply string
@@ -29,10 +30,11 @@ func ClientWebSocketSend(client Client) {
 		log.Println("Can't convert")
 	}
 
-	for _, socket := range listSocketClient {
+	for i, socket := range listSocketClient {
+		log.Println("send client for clientsocket", string(b))
 		if err = websocket.Message.Send(socket, string(b)); err != nil {
 			log.Println("Can't send", err)
-			break
+			listSocketClient = append(listSocketClient[:i], listSocketClient[i+1:]...)
 		}
 	}
 }
