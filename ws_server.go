@@ -8,7 +8,6 @@ import (
 )
 
 func WebSocketStart() {
-	http.Handle("/", websocket.Handler(Echo))
 	http.Handle("/consultants", websocket.Handler(ConsultantsWebsocket))
 	http.Handle("/clients", websocket.Handler(ClientsWebsocket))
 
