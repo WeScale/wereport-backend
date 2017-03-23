@@ -16,10 +16,8 @@ func Logger(inner http.Handler, name string) http.Handler {
 		start := time.Now()
 
 		if strings.Contains(r.RequestURI, "/connect") {
-			log.Println("We are here")
 			inner.ServeHTTP(w, r)
 		} else {
-			log.Println("We are la")
 			authorization := r.Header.Get("authorization")
 			safeAuth := url.QueryEscape(authorization)
 
@@ -41,6 +39,7 @@ func Logger(inner http.Handler, name string) http.Handler {
 			if strings.EqualFold("wescale.fr", record.Hd) {
 				inner.ServeHTTP(w, r)
 			} else {
+				log.Println("Domain:", record.Hd)
 				w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 				w.WriteHeader(http.StatusUnauthorized)
 				fmt.Fprintf(w, "{\"reason\":\"not a wescaler\"}")

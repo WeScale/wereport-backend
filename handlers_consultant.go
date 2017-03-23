@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"log"
+
 	"github.com/gocql/gocql"
 	"github.com/gorilla/mux"
 )
@@ -47,6 +49,7 @@ func ConsultantCreate(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	if err := json.Unmarshal(body, &clt); err != nil {
+		log.Println(body)
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
 		if err := json.NewEncoder(w).Encode(err); err != nil {
@@ -55,6 +58,7 @@ func ConsultantCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	t := RepoCreateConsultant(clt)
+	ConsultantWebSocketSend(t)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(t); err != nil {

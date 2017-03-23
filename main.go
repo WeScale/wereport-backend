@@ -8,6 +8,9 @@ import (
 )
 
 func main() {
+
+	go WebSocketStart()
+
 	router := NewRouter()
 
 	headersOk := handlers.AllowedHeaders([]string{"authorization", "content-type"})
