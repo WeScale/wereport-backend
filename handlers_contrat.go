@@ -63,11 +63,10 @@ func ContratCreate(w http.ResponseWriter, r *http.Request) {
 			status = http.StatusBadRequest
 		} else {
 			status = http.StatusCreated
+			ContratWebSocketSend(contrat)
 		}
 
-		log.Println(contrat)
 		contratdata := MarshalHateoas(contrat)
-
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(status)
 		if err := json.NewEncoder(w).Encode(contratdata); err != nil {
@@ -75,3 +74,5 @@ func ContratCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 }
+
+//e89d05eb-10ab-11e7-b858-0242ac110003

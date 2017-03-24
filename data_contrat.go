@@ -11,15 +11,15 @@ import (
 
 //Contrat ben un Contrat quoi
 type Contrat struct {
-	ID             gocql.UUID `json:"id"`
-	Client         gocql.UUID `json:"client"`
-	Consultant     gocql.UUID `json:"consultant"`
-	Tjm            float32    `json:"tjm"`
-	Bdc            string     `json:"bdc"`
-	Debut          time.Time  `json:"debut"`
-	Fin            time.Time  `json:"fin"`
-	ClientData     Client     `json:"client_data"`
-	ConsultantData Consultant `json:"consultant_data"`
+	ID           gocql.UUID `json:"id"`
+	Tjm          float32    `json:"tjm"`
+	Bdc          string     `json:"bdc"`
+	Debut        time.Time  `json:"debut"`
+	Fin          time.Time  `json:"fin"`
+	ClientID     gocql.UUID `json:"client_id"`
+	ConsultantID gocql.UUID `json:"consultant_id"`
+	Client       Client     `json:"client"`
+	Consultant   Consultant `json:"consultant"`
 }
 
 //Contrats tous les Contrat
@@ -39,7 +39,6 @@ func init() {
 	if err := session.Query(`CREATE TABLE IF NOT EXISTS we.contrat(ID UUID, Consultant UUID, Client UUID, Tjm float, Bdc text, Debut timestamp, Fin timestamp, PRIMARY KEY(id))`).Exec(); err != nil {
 		log.Println(err)
 	}
-
 }
 
 func RepoContrats() Contrats {
@@ -48,7 +47,9 @@ func RepoContrats() Contrats {
 	var list Contrats
 
 	iter := session.Query(`SELECT ID, Consultant, Client, Tjm, Bdc, Debut, Fin FROM contrat`).Iter()
-	for iter.Scan(&unique.ID, &unique.Consultant, &unique.Client, &unique.Tjm, &unique.Bdc, &unique.Debut, &unique.Fin) {
+	for iter.Scan(&unique.ID, &unique.ConsultantID, &unique.ClientID, &unique.Tjm, &unique.Bdc, &unique.Debut, &unique.Fin) {
+		unique.Client = RepoFindClient(unique.ClientID)
+		unique.Consultant = RepoFindConsultantByID(unique.ConsultantID)
 		list = append(list, unique)
 	}
 	if err := iter.Close(); err != nil {
@@ -62,7 +63,7 @@ func RepoFindContrat(id gocql.UUID) Contrat {
 
 	var unique Contrat
 	if err := session.Query(`SELECT ID, Consultant, Client, Tjm, Bdc, Debut, Fin FROM contrat WHERE id = ? `,
-		id).Consistency(gocql.One).Scan(&unique.ID, &unique.Consultant, &unique.Client, &unique.Tjm, &unique.Bdc, &unique.Debut, &unique.Fin); err != nil {
+		id).Consistency(gocql.One).Scan(&unique.ID, &unique.Consultant.ID, &unique.Client.ID, &unique.Tjm, &unique.Bdc, &unique.Debut, &unique.Fin); err != nil {
 		log.Println(err)
 		return Contrat{}
 	}
@@ -74,21 +75,21 @@ func RepoFindContrat(id gocql.UUID) Contrat {
 //RepoCreateContrat create client
 func RepoCreateContrat(unique Contrat) Contrat {
 
-	client := RepoFindClient(unique.Client)
+	client := RepoFindClient(unique.ClientID)
 	if (Client{}) == client {
 		return Contrat{}
 	}
-	unique.ClientData = client
+	unique.Client = client
 
-	consultant := RepoFindConsultant(unique.Consultant)
+	consultant := RepoFindConsultantByID(unique.ConsultantID)
 	if (Consultant{}) == consultant {
 		return Contrat{}
 	}
-	unique.ConsultantData = consultant
+	unique.Consultant = consultant
 
 	unique.ID = gocql.TimeUUID()
 	if err := session.Query(`INSERT INTO Contrat (ID, Consultant, Client, Tjm, Bdc, Debut, Fin) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		&unique.ID, &unique.Consultant, &unique.Client, &unique.Tjm, &unique.Bdc, &unique.Debut, &unique.Fin).Exec(); err != nil {
+		&unique.ID, &unique.ConsultantID, &unique.ClientID, &unique.Tjm, &unique.Bdc, &unique.Debut, &unique.Fin).Exec(); err != nil {
 		log.Println(err)
 	}
 

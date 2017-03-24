@@ -8,11 +8,11 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-var listSocketClient []*websocket.Conn
+var listSocketContrats []*websocket.Conn
 
-func ClientsWebsocket(ws *websocket.Conn) {
+func ContratsWebsocket(ws *websocket.Conn) {
 	log.Println("add client for clientsocket")
-	listSocketClient = append(listSocketClient, ws)
+	listSocketContrats = append(listSocketContrats, ws)
 	for {
 		var reply string
 		if err := websocket.Message.Receive(ws, &reply); err != nil {
@@ -23,17 +23,17 @@ func ClientsWebsocket(ws *websocket.Conn) {
 	}
 }
 
-func ClientWebSocketSend(client Client) {
-	b, err := json.Marshal(&client)
+func ContratWebSocketSend(contrat Contrat) {
+	b, err := json.Marshal(&contrat)
 	if err != nil {
 		log.Println("Can't convert")
 	}
 
-	for i, socket := range listSocketClient {
-		log.Println("send client for clientsocket", string(b))
+	for i, socket := range listSocketContrats {
+		log.Println("send contrat for contratsocket", string(b))
 		if err = websocket.Message.Send(socket, string(b)); err != nil {
 			log.Println("Can't send", err)
-			listSocketClient = append(listSocketClient[:i], listSocketClient[i+1:]...)
+			listSocketContrats = append(listSocketContrats[:i], listSocketContrats[i+1:]...)
 		}
 	}
 }

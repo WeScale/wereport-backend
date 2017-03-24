@@ -16,7 +16,6 @@ func ConsultantsWebsocket(ws *websocket.Conn) {
 	for {
 		var reply string
 		if err := websocket.Message.Receive(ws, &reply); err != nil {
-			fmt.Println("Can't receive")
 			break
 		}
 

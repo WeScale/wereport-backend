@@ -30,7 +30,7 @@ func GetOneConsultant(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	var clt Consultant
-	clt = RepoFindConsultant(consultantID)
+	clt = RepoFindConsultantByID(consultantID)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 

@@ -7,26 +7,29 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+
+	"github.com/gocql/gocql"
 )
 
 type GoogleAuth struct {
-	Azp           string `json:"azp"`
-	Aud           string `json:"aud"`
-	Sub           string `json:"sub"`
-	Hd            string `json:"hd"`
-	Email         string `json:"email"`
-	EmailVerified string `json:"email_verified"`
-	Hash          string `json:"at_hash"`
-	Iss           string `json:"iss"`
-	Iat           string `json:"iat"`
-	Exp           string `json:"exp"`
-	Name          string `json:"name"`
-	Picture       string `json:"picture"`
-	GivenName     string `json:"given_name"`
-	FamillyName   string `json:"family_name"`
-	Locale        string `json:"locale"`
-	Alg           string `json:"alg"`
-	Kid           string `json:"kid"`
+	Azp           string     `json:"azp"`
+	Aud           string     `json:"aud"`
+	Sub           string     `json:"sub"`
+	Hd            string     `json:"hd"`
+	Email         string     `json:"email"`
+	EmailVerified string     `json:"email_verified"`
+	Hash          string     `json:"at_hash"`
+	Iss           string     `json:"iss"`
+	Iat           string     `json:"iat"`
+	Exp           string     `json:"exp"`
+	Name          string     `json:"name"`
+	Picture       string     `json:"picture"`
+	GivenName     string     `json:"given_name"`
+	FamillyName   string     `json:"family_name"`
+	Locale        string     `json:"locale"`
+	Alg           string     `json:"alg"`
+	Kid           string     `json:"kid"`
+	WeReportID    gocql.UUID `json:"wereportid"`
 }
 
 func Index(w http.ResponseWriter, r *http.Request) {
@@ -52,9 +55,19 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 
 	var record GoogleAuth
+	var consultant Consultant
 
 	if err := json.NewDecoder(resp.Body).Decode(&record); err != nil {
 		log.Println(err)
+	}
+
+	consultant = RepoFindConsultantByEmail(record.Email)
+	if consultant == (Consultant{}) {
+		log.Println("First connexion of", record.Email)
+		consultant = RepoCreateConsultant(Consultant{FirstName: record.GivenName, LastName: record.FamillyName, Email: record.Email})
+		record.WeReportID = consultant.ID
+	} else {
+		record.WeReportID = consultant.ID
 	}
 
 	if err := json.NewEncoder(w).Encode(record); err != nil {
