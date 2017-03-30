@@ -11,7 +11,7 @@ import (
 var listSocketContrats []*websocket.Conn
 
 func ContratsWebsocket(ws *websocket.Conn) {
-	log.Println("add client for clientsocket")
+	log.Println("add client for contratsocket")
 	listSocketContrats = append(listSocketContrats, ws)
 	for {
 		var reply string

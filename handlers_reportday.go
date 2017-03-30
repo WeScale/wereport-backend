@@ -6,33 +6,26 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"log"
+
 	"github.com/gocql/gocql"
+	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 )
 
 func GetReportDays(w http.ResponseWriter, r *http.Request) {
-	var ReportDays ReportDays
-	ReportDays = RepoReportDays()
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
-
-	if err := json.NewEncoder(w).Encode(ReportDays); err != nil {
-		panic(err)
-	}
-}
-
-func GetOneReportDay(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
+	var ReportDays ReportDays
 	reportdayID, err := gocql.ParseUUID(vars["id"])
 	if err != nil {
 		panic(err)
 	}
-	var clt ReportDay
-	clt = RepoFindReportDay(reportdayID)
+
+	ReportDays = RepoReportDays(reportdayID)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
-	if err := json.NewEncoder(w).Encode(clt); err != nil {
+	if err := json.NewEncoder(w).Encode(ReportDays); err != nil {
 		panic(err)
 	}
 }
@@ -47,6 +40,7 @@ func ReportDayCreate(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	if err := json.Unmarshal(body, &clt); err != nil {
+		log.Println(err)
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
 		if err := json.NewEncoder(w).Encode(err); err != nil {
@@ -54,9 +48,19 @@ func ReportDayCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	var consultant Consultant
+	consultant = context.Get(r, UserData).(Consultant)
+	clt.Owner = consultant.ID
+
+	var statusHttp int
 	t := RepoCreateReportDay(clt)
+	if t == (ReportDay{}) {
+		statusHttp = http.StatusConflict
+	} else {
+		statusHttp = http.StatusCreated
+	}
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(statusHttp)
 	if err := json.NewEncoder(w).Encode(t); err != nil {
 		panic(err)
 	}

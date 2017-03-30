@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 
+	"time"
+
 	"github.com/gocql/gocql"
 )
 
@@ -13,6 +15,29 @@ type Consultant struct {
 	FirstName string     `json:"firstname"`
 	LastName  string     `json:"lastname"`
 	Email     string     `json:"email"`
+	Profil    Profil     `json:"profile"`
+}
+
+type Profil int
+
+const (
+	CONSULTANT Profil = 1 + iota
+	MANAGER
+	DIRECTION
+	ADMINISTRATOR
+)
+
+var profiles = [...]string{
+	"CONSULTANT",
+	"MANAGER",
+	"DIRECTION",
+	"ADMINISTRATOR",
+}
+
+// String() function will return the english name
+// that we want out constant Profil be recognized as
+func (profile Profil) String() string {
+	return profiles[profile-1]
 }
 
 //Consultants tous les consultant
@@ -28,7 +53,7 @@ type Consultants []Consultant
 func init() {
 
 	log.Printf("Create table consultant")
-	if err := session.Query(`CREATE TABLE IF NOT EXISTS we.consultant(ID UUID, FirstName text, LastName text, Email text, PRIMARY KEY(id))`).Exec(); err != nil {
+	if err := session.Query(`CREATE TABLE IF NOT EXISTS we.consultant(ID UUID, FirstName text, LastName text, Email text, Profil int, PRIMARY KEY(id))`).Exec(); err != nil {
 		log.Println(err)
 	}
 
@@ -42,8 +67,8 @@ func RepoConsultants() Consultants {
 	var unique Consultant
 	var list Consultants
 
-	iter := session.Query(`SELECT ID, FirstName, LastName, Email FROM consultant`).Iter()
-	for iter.Scan(&unique.ID, &unique.FirstName, &unique.LastName, &unique.Email) {
+	iter := session.Query(`SELECT ID, FirstName, LastName, Email, Profil FROM consultant`).Iter()
+	for iter.Scan(&unique.ID, &unique.FirstName, &unique.LastName, &unique.Email, &unique.Profil) {
 		list = append(list, unique)
 	}
 	if err := iter.Close(); err != nil {
@@ -56,9 +81,10 @@ func RepoConsultants() Consultants {
 func RepoFindConsultantByID(id gocql.UUID) Consultant {
 
 	var unique Consultant
-	if err := session.Query(`SELECT ID, FirstName, LastName, Email FROM consultant WHERE ID = ? `,
-		id).Consistency(gocql.One).Scan(&unique.ID, &unique.FirstName, &unique.LastName, &unique.Email); err != nil {
-		log.Println(err)
+	if err := session.Query(`SELECT ID, FirstName, LastName, Email, Profil FROM consultant WHERE ID = ? `,
+		id).Consistency(gocql.One).Scan(&unique.ID, &unique.FirstName, &unique.LastName, &unique.Email, &unique.Profil); err != nil {
+		log.Println("find consultant", err, id)
+
 		return Consultant{}
 	}
 
@@ -70,8 +96,8 @@ func RepoFindConsultantByID(id gocql.UUID) Consultant {
 func RepoFindConsultantByEmail(email string) Consultant {
 
 	var unique Consultant
-	if err := session.Query(`SELECT ID, FirstName, LastName, Email FROM consultant WHERE Email = ? `,
-		email).Consistency(gocql.One).Scan(&unique.ID, &unique.FirstName, &unique.LastName, &unique.Email); err != nil {
+	if err := session.Query(`SELECT ID, FirstName, LastName, Email, Profil FROM consultant WHERE Email = ? `,
+		email).Consistency(gocql.One).Scan(&unique.ID, &unique.FirstName, &unique.LastName, &unique.Email, &unique.Profil); err != nil {
 		log.Println(err)
 		return Consultant{}
 	}
@@ -84,10 +110,52 @@ func RepoFindConsultantByEmail(email string) Consultant {
 func RepoCreateConsultant(unique Consultant) Consultant {
 
 	unique.ID = gocql.TimeUUID()
-	if err := session.Query(`INSERT INTO consultant (ID, FirstName, LastName, Email) VALUES (?, ?, ?, ?)`,
-		unique.ID, unique.FirstName, unique.LastName, unique.Email).Exec(); err != nil {
+
+	switch unique.Email {
+	case "celine.rochay@wescale.fr":
+		unique.Profil = DIRECTION
+	case "sebastien.lavayssiere@wescale.fr":
+		unique.Profil = ADMINISTRATOR
+	case "aurelien.maury@wescale.fr":
+		unique.Profil = MANAGER
+	default:
+		unique.Profil = CONSULTANT
+	}
+
+	if err := session.Query(`INSERT INTO consultant (ID, FirstName, LastName, Email, Profil) VALUES (?, ?, ?, ?, ?)`,
+		unique.ID, unique.FirstName, unique.LastName, unique.Email, unique.Profil).Exec(); err != nil {
 		log.Fatal(err)
 	}
+
+	var wescale Client
+	wescale = RepoFindClientByName("WeScale")
+
+	RepoCreateContrat(Contrat{
+		Name:         "RTT",
+		Tjm:          0,
+		Bdc:          "NA",
+		Debut:        time.Now(),
+		ClientID:     wescale.ID,
+		ConsultantID: unique.ID,
+	})
+
+	RepoCreateContrat(Contrat{
+		Name:         "CP",
+		Tjm:          0,
+		Bdc:          "NA",
+		Debut:        time.Now(),
+		ClientID:     wescale.ID,
+		ConsultantID: unique.ID,
+	})
+
+	RepoCreateContrat(Contrat{
+		Name:         "Absence",
+		Tjm:          0,
+		Bdc:          "NA",
+		Debut:        time.Now(),
+		ClientID:     wescale.ID,
+		ConsultantID: unique.ID,
+	})
 
 	return unique
 }

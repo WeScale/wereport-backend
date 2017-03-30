@@ -13,12 +13,12 @@ import (
 )
 
 func GetContrats(w http.ResponseWriter, r *http.Request) {
-	var Contrats Contrats
-	Contrats = RepoContrats()
+	var contrats Contrats
+	contrats = RepoContrats()
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
-	if err := json.NewEncoder(w).Encode(Contrats); err != nil {
+	if err := json.NewEncoder(w).Encode(contrats); err != nil {
 		panic(err)
 	}
 }
@@ -39,6 +39,22 @@ func GetOneContrat(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func GetContratsConsultant(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	consultantID, err := gocql.ParseUUID(vars["id"])
+	if err != nil {
+		panic(err)
+	}
+	var contrats Contrats
+	contrats = RepoContratsOneConsultant(consultantID)
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+
+	if err := json.NewEncoder(w).Encode(contrats); err != nil {
+		panic(err)
+	}
+}
+
 func ContratCreate(w http.ResponseWriter, r *http.Request) {
 	var clt Contrat
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
@@ -49,7 +65,7 @@ func ContratCreate(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	if err := json.Unmarshal(body, &clt); err != nil {
-		log.Println("error mapping")
+		log.Println("error mapping", err)
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
 		if err := json.NewEncoder(w).Encode(err); err != nil {

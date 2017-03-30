@@ -12,13 +12,14 @@ import (
 
 //Client ben un client quoi
 type ReportDay struct {
-	ID       gocql.UUID `json:"id"`
-	Contrat  gocql.UUID `json:"client"`
-	Year     int        `json:"year"`
-	Month    int        `json:"month"`
-	Day      int        `json:"day"`
-	Time     float32    `json:"time"`
-	Creation time.Time  `json:"creation"`
+	ID          gocql.UUID `json:"id"`
+	Contrat     gocql.UUID `json:"contrat"`
+	Report      gocql.UUID `json:"report"`
+	Owner       gocql.UUID `json:"day_owner"`
+	Day         int        `json:"day"`
+	Time        float32    `json:"time"`
+	Creation    time.Time  `json:"creation"`
+	ContratData Contrat    `json:"contrat_data"`
 }
 
 //Clients tous les clients
@@ -26,48 +27,99 @@ type ReportDays []ReportDay
 
 func init() {
 	log.Printf("Create table ReportDay")
-	if err := session.Query(`CREATE TABLE IF NOT EXISTS we.ReportDay(ID UUID, Contrat UUID, Month int, Day int, Time float, PRIMARY KEY(id))`).Exec(); err != nil {
+	if err := session.Query(`CREATE TABLE IF NOT EXISTS we.ReportDay(ID UUID, Contrat UUID, Report UUID, Owner UUID, Day int, Time float, Creation timestamp, PRIMARY KEY(ID))`).Exec(); err != nil {
+		log.Println(err)
+	}
+
+	if err := session.Query(`CREATE INDEX IF NOT EXISTS index_Report ON we.ReportDay (Report)`).Exec(); err != nil {
+		log.Println(err)
+	}
+
+	if err := session.Query(`CREATE INDEX IF NOT EXISTS index_Report ON we.ReportDay (Day)`).Exec(); err != nil {
 		log.Println(err)
 	}
 
 }
 
-func RepoReportDays() ReportDays {
+func RepoReportDays(report gocql.UUID) ReportDays {
 
 	var unique ReportDay
 	var list ReportDays
 
-	iter := session.Query(`SELECT ID, Contrat, Month, Day, Time FROM ReportDay`).Iter()
-	for iter.Scan(&unique.ID, &unique.Contrat, &unique.Month, &unique.Day, &unique.Time) {
+	iter := session.Query(`SELECT ID, Contrat, Report, Owner, Day, Time, Creation FROM ReportDay WHERE Report = ?  ALLOW FILTERING`, report).Iter()
+	for iter.Scan(&unique.ID, &unique.Contrat, &unique.Report, &unique.Owner, &unique.Day, &unique.Time, &unique.Creation) {
+		unique.ContratData = RepoFindContrat(unique.Contrat)
 		list = append(list, unique)
 	}
 	if err := iter.Close(); err != nil {
 		log.Fatal(err)
 	}
+
 	return list
 }
 
-//RepoFindReportDay find one client
-func RepoFindReportDay(id gocql.UUID) ReportDay {
+//RepoFindReportDay
+func RepoFindReportDay(report gocql.UUID, day int) ReportDays {
 
 	var unique ReportDay
-	if err := session.Query(`SELECT ID, Contrat, Month, Day, Time FROM ReportDay WHERE id = ? `,
-		id).Consistency(gocql.One).Scan(&unique.ID, &unique.Contrat, &unique.Month, &unique.Day, &unique.Time); err != nil {
+	var list ReportDays
+
+	iter := session.Query(`SELECT ID, Contrat, Report, Owner, Day, Time, Creation FROM ReportDay WHERE Report = ? AND Day = ? ALLOW FILTERING`, report, day).Iter()
+	for iter.Scan(&unique.ID, &unique.Contrat, &unique.Report, &unique.Owner, &unique.Day, &unique.Time, &unique.Creation) {
+		unique.ContratData = RepoFindContrat(unique.Contrat)
+		list = append(list, unique)
+	}
+	if err := iter.Close(); err != nil {
 		log.Println(err)
+	}
+
+	return list
+}
+
+//RepoFindOneReportDay
+func RepoFindOneReportDay(report gocql.UUID, day int, contrat gocql.UUID) ReportDay {
+	var unique ReportDay
+
+	if err := session.Query(`SELECT ID, Contrat, Report, Owner, Day, Time, Creation FROM ReportDay WHERE Report = ? AND Day = ? AND Contrat = ? ALLOW FILTERING`,
+		report, day, contrat).Consistency(gocql.One).Scan(&unique.ID, &unique.Contrat, &unique.Report, &unique.Owner, &unique.Day, &unique.Time, &unique.Creation); err != nil {
 		return ReportDay{}
 	}
 
-	// return empty Todo if not found
+	unique.ContratData = RepoFindContrat(unique.Contrat)
+
 	return unique
 }
 
 //RepoCreateReportDay create client
 func RepoCreateReportDay(unique ReportDay) ReportDay {
 
-	unique.ID = gocql.TimeUUID()
-	if err := session.Query(`INSERT INTO ReportDay (ID, Contrat, Month, Day, Time) VALUES (?, ?, ?, ?, ?)`,
-		&unique.ID, &unique.Contrat, &unique.Month, &unique.Day, &unique.Time).Exec(); err != nil {
-		log.Fatal(err)
+	var search ReportDays
+	search = RepoFindReportDay(unique.Report, unique.Day)
+
+	var totalTime float32
+	if unique.Time != 0 {
+		totalTime = 0
+		for _, element := range search {
+			totalTime = totalTime + element.Time
+		}
+	}
+
+	if totalTime < 1 {
+		repDay := RepoFindOneReportDay(unique.Report, unique.Day, unique.Contrat)
+		if repDay == (ReportDay{}) {
+			unique.ID = gocql.TimeUUID()
+			if err := session.Query(`INSERT INTO ReportDay (ID, Contrat, Report, Owner, Day, Time, Creation) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+				&unique.ID, &unique.Contrat, &unique.Report, &unique.Owner, &unique.Day, &unique.Time, &unique.Creation).Exec(); err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			if err := session.Query(`UPDATE ReportDay SET Time = ? WHERE ID = ?`,
+				&unique.Time, &repDay.ID).Exec(); err != nil {
+				log.Fatal(err)
+			}
+		}
+	} else {
+		unique = ReportDay{}
 	}
 
 	return unique

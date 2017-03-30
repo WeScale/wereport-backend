@@ -8,7 +8,13 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/gorilla/context"
 )
+
+type key int
+
+const UserData key = 0
 
 //Logger this is a logger
 func Logger(inner http.Handler, name string) http.Handler {
@@ -37,9 +43,10 @@ func Logger(inner http.Handler, name string) http.Handler {
 			}
 
 			if strings.EqualFold("wescale.fr", record.Hd) {
+				consultant := RepoFindConsultantByEmail(record.Email)
+				context.Set(r, UserData, consultant)
 				inner.ServeHTTP(w, r)
 			} else {
-				log.Println("Domain:", record.Hd)
 				w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 				w.WriteHeader(http.StatusUnauthorized)
 				fmt.Fprintf(w, "{\"reason\":\"not a wescaler\"}")

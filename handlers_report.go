@@ -5,34 +5,46 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 
 	"github.com/gocql/gocql"
 	"github.com/gorilla/mux"
 )
 
 func GetReports(w http.ResponseWriter, r *http.Request) {
-	var Reports Reports
-	Reports = RepoReports()
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
-
-	if err := json.NewEncoder(w).Encode(Reports); err != nil {
-		panic(err)
-	}
-}
-
-func GetOneReport(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	reportID, err := gocql.ParseUUID(vars["id"])
+	year, err := strconv.Atoi(vars["year"])
+	month, err := strconv.Atoi(vars["month"])
 	if err != nil {
 		panic(err)
 	}
-	var clt Report
-	clt = RepoFindReport(reportID)
+	var clt Reports
+	clt = RepoReports(year, month)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
 	if err := json.NewEncoder(w).Encode(clt); err != nil {
+		panic(err)
+	}
+}
+
+func GetReportsOneConsultant(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	year, err := strconv.Atoi(vars["year"])
+	month, err := strconv.Atoi(vars["month"])
+	consultantid, err := gocql.ParseUUID(vars["id"])
+	if err != nil {
+		panic(err)
+	}
+	var clt Report
+	clt = RepoFindReport(year, month, consultantid)
+
+	var cltData ViewReports
+	cltData = ChangeDataType(clt, consultantid)
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+
+	if err := json.NewEncoder(w).Encode(cltData); err != nil {
 		panic(err)
 	}
 }
@@ -55,6 +67,8 @@ func ReportCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	t := RepoCreateReport(clt)
+	ReportWebSocketSend(clt)
+
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(t); err != nil {

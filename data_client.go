@@ -23,6 +23,19 @@ func init() {
 	if err := session.Query(`CREATE TABLE IF NOT EXISTS we.client(ID UUID, Name text, Service text, Creation timestamp, PRIMARY KEY(id))`).Exec(); err != nil {
 		log.Println(err)
 	}
+
+	if err := session.Query(`CREATE INDEX IF NOT EXISTS index_Name ON we.client (Name)`).Exec(); err != nil {
+		log.Println(err)
+	}
+
+	var wescale Client
+	wescale = RepoFindClientByName("WeScale")
+	if wescale == (Client{}) {
+		wescale = RepoCreateClient(Client{
+			Name:    "WeScale",
+			Service: "internal",
+		})
+	}
 }
 
 func RepoClients() Clients {
@@ -47,7 +60,20 @@ func RepoFindClient(id gocql.UUID) Client {
 	var client Client
 	if err := session.Query(`SELECT ID, Name, Service, Creation FROM client WHERE ID = ? `,
 		id).Consistency(gocql.One).Scan(&client.ID, &client.Name, &client.Service, &client.Creation); err != nil {
-		log.Println(err)
+		log.Println("not find client", err, id)
+		return Client{}
+	}
+
+	// return empty Todo if not found
+	return client
+}
+
+//RepoFindClient find one client
+func RepoFindClientByName(name string) Client {
+
+	var client Client
+	if err := session.Query(`SELECT ID, Name, Service, Creation FROM client WHERE Name = ? `,
+		name).Consistency(gocql.One).Scan(&client.ID, &client.Name, &client.Service, &client.Creation); err != nil {
 		return Client{}
 	}
 

@@ -30,6 +30,7 @@ type GoogleAuth struct {
 	Alg           string     `json:"alg"`
 	Kid           string     `json:"kid"`
 	WeReportID    gocql.UUID `json:"wereportid"`
+	Profil        string     `json:"profil"`
 }
 
 func Index(w http.ResponseWriter, r *http.Request) {
@@ -65,10 +66,10 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 	if consultant == (Consultant{}) {
 		log.Println("First connexion of", record.Email)
 		consultant = RepoCreateConsultant(Consultant{FirstName: record.GivenName, LastName: record.FamillyName, Email: record.Email})
-		record.WeReportID = consultant.ID
-	} else {
-		record.WeReportID = consultant.ID
 	}
+
+	record.WeReportID = consultant.ID
+	record.Profil = consultant.Profil.String()
 
 	if err := json.NewEncoder(w).Encode(record); err != nil {
 		panic(err)

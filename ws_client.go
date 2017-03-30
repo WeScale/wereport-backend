@@ -26,7 +26,7 @@ func ClientsWebsocket(ws *websocket.Conn) {
 func ClientWebSocketSend(client Client) {
 	b, err := json.Marshal(&client)
 	if err != nil {
-		log.Println("Can't convert")
+		log.Println("Can't convert", err)
 	}
 
 	for i, socket := range listSocketClient {

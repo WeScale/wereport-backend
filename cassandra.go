@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"time"
 
 	"github.com/gocql/gocql"
 )
@@ -11,6 +12,7 @@ import (
 func NewCassandra() (*gocql.ClusterConfig, *gocql.Session) {
 	cluster := gocql.NewCluster(os.Getenv("CASSANDRA_HOSTS"))
 	cluster.Consistency = gocql.Quorum
+	cluster.Timeout = 2 * time.Second
 
 	log.Printf("Connexion to " + cluster.Hosts[0])
 

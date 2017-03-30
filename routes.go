@@ -81,16 +81,16 @@ var routes = Routes{
 		FactureCreate,
 	},
 	Route{
-		"ReportIndex",
+		"ReportShowAll",
 		"GET",
-		"/reports",
+		"/reports/{year}/{month}",
 		GetReports,
 	},
 	Route{
-		"ReportShow",
+		"ReportShowOne",
 		"GET",
-		"/reports/{id}",
-		GetOneReport,
+		"/reports/{year}/{month}/consultant/{id}",
+		GetReportsOneConsultant,
 	},
 	Route{
 		"ReportCreate",
@@ -103,12 +103,6 @@ var routes = Routes{
 		"GET",
 		"/reportdays",
 		GetReportDays,
-	},
-	Route{
-		"ReportDayShow",
-		"GET",
-		"/reportsdays/{id}",
-		GetOneReportDay,
 	},
 	Route{
 		"ReportDayCreate",
@@ -127,6 +121,12 @@ var routes = Routes{
 		"GET",
 		"/contrats/{id}",
 		GetOneContrat,
+	},
+	Route{
+		"ContratConsultants",
+		"GET",
+		"/contrats/consultant/{id}",
+		GetContratsConsultant,
 	},
 	Route{
 		"ContratCreate",
