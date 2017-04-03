@@ -18,6 +18,10 @@ func MarshalHateoas(subject interface{}) map[string]interface{} {
 	switch s := subject.(type) {
 	case Contrat:
 		links["self"] = fmt.Sprintf("/contrats/%s", s.ID.String())
+	case Client:
+		links["self"] = fmt.Sprintf("/clients/%s", s.ID.String())
+	case Consultant:
+		links["self"] = fmt.Sprintf("/consultants/%s", s.ID.String())
 	}
 	out["_links"] = links
 	return out

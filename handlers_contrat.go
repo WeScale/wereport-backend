@@ -12,6 +12,34 @@ import (
 	"github.com/gorilla/mux"
 )
 
+func init() {
+	routes = append(routes,
+		Route{
+			"ContratShow",
+			"GET",
+			"/contrats/{id}",
+			GetOneContrat,
+		},
+		Route{
+			"ContratConsultants",
+			"GET",
+			"/contrats/consultant/{id}",
+			GetContratsConsultant,
+		},
+		Route{
+			"ContratCreate",
+			"POST",
+			"/contrats",
+			ContratCreate,
+		},
+		Route{
+			"ContratIndex",
+			"GET",
+			"/contrats",
+			GetContrats,
+		})
+}
+
 func GetContrats(w http.ResponseWriter, r *http.Request) {
 	var contrats Contrats
 	contrats = RepoContrats()

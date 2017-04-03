@@ -11,6 +11,28 @@ import (
 	"github.com/gorilla/mux"
 )
 
+func init() {
+	routes = append(routes,
+		Route{
+			"ReportShowAll",
+			"GET",
+			"/reports/{year}/{month}",
+			GetReports,
+		},
+		Route{
+			"ReportShowOne",
+			"GET",
+			"/reports/{year}/{month}/consultant/{id}",
+			GetReportsOneConsultant,
+		},
+		Route{
+			"ReportCreate",
+			"POST",
+			"/reports",
+			ReportCreate,
+		})
+}
+
 func GetReports(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	year, err := strconv.Atoi(vars["year"])

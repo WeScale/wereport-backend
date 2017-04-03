@@ -10,6 +10,28 @@ import (
 	"github.com/gorilla/mux"
 )
 
+func init() {
+	routes = append(routes,
+		Route{
+			"ConsultantIndex",
+			"GET",
+			"/consultants",
+			GetConsultants,
+		},
+		Route{
+			"ConsultantShow",
+			"GET",
+			"/consultants/{id}",
+			GetOneConsultant,
+		},
+		Route{
+			"ConsultantCreate",
+			"POST",
+			"/consultants",
+			ConsultantCreate,
+		})
+}
+
 func GetConsultants(w http.ResponseWriter, r *http.Request) {
 	var consultants Consultants
 	consultants = RepoConsultants()
@@ -56,9 +78,10 @@ func ConsultantCreate(w http.ResponseWriter, r *http.Request) {
 
 	t := RepoCreateConsultant(clt)
 	ConsultantWebSocketSend(t)
+	consultantdata := MarshalHateoas(t)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(t); err != nil {
+	if err := json.NewEncoder(w).Encode(consultantdata); err != nil {
 		panic(err)
 	}
 }

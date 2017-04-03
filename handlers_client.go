@@ -10,6 +10,28 @@ import (
 	"github.com/gorilla/mux"
 )
 
+func init() {
+	routes = append(routes,
+		Route{
+			"ClientsIndex",
+			"GET",
+			"/clients",
+			GetClients,
+		},
+		Route{
+			"ClientShow",
+			"GET",
+			"/clients/{id}",
+			GetOneClient,
+		},
+		Route{
+			"ClientCreate",
+			"POST",
+			"/clients",
+			ClientCreate,
+		})
+}
+
 func GetClients(w http.ResponseWriter, r *http.Request) {
 	var clients Clients
 	clients = RepoClients()

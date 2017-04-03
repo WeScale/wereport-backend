@@ -13,6 +13,22 @@ import (
 	"github.com/gorilla/mux"
 )
 
+func init() {
+	routes = append(routes,
+		Route{
+			"ReportDayIndex",
+			"GET",
+			"/reportdays",
+			GetReportDays,
+		},
+		Route{
+			"ReportDayCreate",
+			"POST",
+			"/reportsdays",
+			ReportDayCreate,
+		})
+}
+
 func GetReportDays(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	var ReportDays ReportDays
