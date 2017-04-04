@@ -112,6 +112,8 @@ func RepoCreateConsultant(unique Consultant) Consultant {
 	unique.ID = gocql.TimeUUID()
 
 	switch unique.Email {
+	case "slemesle@wescale.fr":
+		unique.Profil = DIRECTION
 	case "celine.rochay@wescale.fr":
 		unique.Profil = DIRECTION
 	case "sebastien.lavayssiere@wescale.fr":
@@ -140,7 +142,16 @@ func RepoCreateConsultant(unique Consultant) Consultant {
 	})
 
 	RepoCreateContrat(Contrat{
-		Name:         "CP",
+		Name:         "Congé Payé",
+		Tjm:          0,
+		Bdc:          "NA",
+		Debut:        time.Now(),
+		ClientID:     wescale.ID,
+		ConsultantID: unique.ID,
+	})
+
+	RepoCreateContrat(Contrat{
+		Name:         "Congé Maladie",
 		Tjm:          0,
 		Bdc:          "NA",
 		Debut:        time.Now(),
@@ -150,6 +161,33 @@ func RepoCreateConsultant(unique Consultant) Consultant {
 
 	RepoCreateContrat(Contrat{
 		Name:         "Absence",
+		Tjm:          0,
+		Bdc:          "NA",
+		Debut:        time.Now(),
+		ClientID:     wescale.ID,
+		ConsultantID: unique.ID,
+	})
+
+	RepoCreateContrat(Contrat{
+		Name:         "WeShare & Conf",
+		Tjm:          0,
+		Bdc:          "NA",
+		Debut:        time.Now(),
+		ClientID:     wescale.ID,
+		ConsultantID: unique.ID,
+	})
+
+	RepoCreateContrat(Contrat{
+		Name:         "Formation",
+		Tjm:          0,
+		Bdc:          "NA",
+		Debut:        time.Now(),
+		ClientID:     wescale.ID,
+		ConsultantID: unique.ID,
+	})
+
+	RepoCreateContrat(Contrat{
+		Name:         "Intercontrat",
 		Tjm:          0,
 		Bdc:          "NA",
 		Debut:        time.Now(),
