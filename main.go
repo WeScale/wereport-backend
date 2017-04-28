@@ -4,12 +4,13 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/WeScale/wereport-backend/websockets"
 	"github.com/gorilla/handlers"
 )
 
 func main() {
 
-	go WebSocketStart()
+	go Websockets.WebSocketStart()
 
 	router := NewRouter()
 
