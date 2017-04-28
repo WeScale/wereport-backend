@@ -15,9 +15,9 @@ type ViewReport struct {
 
 type ViewReports []ViewReport
 
-var calendar = createCalendar()
+var calendar = CreateCalendar()
 
-func createCalendar() *cal.Calendar {
+func CreateCalendar() *cal.Calendar {
 	calendar := cal.NewCalendar()
 
 	// add holidays for the business
