@@ -16,17 +16,17 @@ import (
 
 func GetReportDays(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	var ReportDays Data.ReportDays
+	var reportDays Data.ReportDays
 	reportdayID, err := gocql.ParseUUID(vars["id"])
 	if err != nil {
 		panic(err)
 	}
 
-	ReportDays = Data.RepoReportDays(reportdayID)
+	reportDays.RepoReportDays(reportdayID)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
-	if err := json.NewEncoder(w).Encode(ReportDays); err != nil {
+	if err := json.NewEncoder(w).Encode(reportDays); err != nil {
 		panic(err)
 	}
 }
@@ -54,15 +54,15 @@ func ReportDayCreate(w http.ResponseWriter, r *http.Request) {
 	clt.Owner = consultant.ID
 
 	var statusHTTP int
-	t := Data.RepoCreateReportDay(clt)
-	if t == (Data.ReportDay{}) {
+	clt.RepoCreateReportDay()
+	if clt == (Data.ReportDay{}) {
 		statusHTTP = http.StatusConflict
 	} else {
 		statusHTTP = http.StatusCreated
 	}
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(statusHTTP)
-	if err := json.NewEncoder(w).Encode(t); err != nil {
+	if err := json.NewEncoder(w).Encode(clt); err != nil {
 		panic(err)
 	}
 }

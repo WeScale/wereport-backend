@@ -16,7 +16,7 @@ import (
 
 func GetContrats(w http.ResponseWriter, r *http.Request) {
 	var contrats Data.Contrats
-	contrats = Data.RepoContrats()
+	contrats.RepoContrats()
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
@@ -32,7 +32,8 @@ func GetOneContrat(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	var clt Data.Contrat
-	clt = Data.RepoFindContrat(contratID)
+	clt.ID = contratID
+	clt.RepoFindContrat()
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
@@ -48,7 +49,10 @@ func GetContratsConsultant(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	var contrats Data.Contrats
-	contrats = Data.RepoContratsOneConsultant(consultantID)
+	var consultant Data.Consultant
+	consultant.ID = consultantID
+	consultant.RepoFindConsultant()
+	contrats = consultant.RepoContrats()
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
@@ -75,7 +79,7 @@ func ContratCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		var status int
-		contrat := Data.RepoCreateContrat(clt)
+		contrat := clt.RepoCreateContrat()
 
 		if contrat == (Data.Contrat{}) {
 			status = http.StatusBadRequest

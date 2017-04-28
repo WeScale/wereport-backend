@@ -14,7 +14,7 @@ import (
 
 func GetClients(w http.ResponseWriter, r *http.Request) {
 	var clients Data.Clients
-	clients = Data.RepoClients()
+	clients.RepoClients()
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
@@ -30,7 +30,8 @@ func GetOneClient(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	var clt Data.Client
-	clt = Data.RepoFindClient(clientID)
+	clt.ID = clientID
+	clt.RepoFindClient()
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
@@ -56,7 +57,7 @@ func ClientCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	t := Data.RepoCreateClient(client)
+	t := client.RepoCreateClient()
 	Websockets.ClientWebSocketSend(t)
 	clientdata := MarshalHateoas(t)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")

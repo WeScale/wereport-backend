@@ -46,32 +46,33 @@ func init() {
 	}
 }
 
-func RepoContrats() Contrats {
+func (list Contrats) RepoContrats() {
 
 	var unique Contrat
-	var list Contrats
 
 	iter := session.Query(`SELECT ID, Name, Consultant, Client, Tjm, Bdc, Debut, Fin FROM contrat`).Iter()
 	for iter.Scan(&unique.ID, &unique.Name, &unique.ConsultantID, &unique.ClientID, &unique.Tjm, &unique.Bdc, &unique.Debut, &unique.Fin) {
-		unique.Client = RepoFindClient(unique.ClientID)
-		unique.Consultant = RepoFindConsultantByID(unique.ConsultantID)
+		unique.Client.ID = unique.ClientID
+		unique.Client.RepoFindClient()
+		unique.Consultant.ID = unique.ConsultantID
+		unique.Consultant.RepoFindConsultant()
 		list = append(list, unique)
 	}
 	if err := iter.Close(); err != nil {
 		log.Fatal(err)
 	}
-	return list
 }
 
-func RepoContratsOneConsultant(id gocql.UUID) Contrats {
+func (consultant Consultant) RepoContrats() Contrats {
 
 	var unique Contrat
 	var list Contrats
 
-	iter := session.Query(`SELECT ID, Name, Consultant, Client, Tjm, Bdc, Debut, Fin FROM contrat WHERE Consultant = ?`, id).Iter()
+	iter := session.Query(`SELECT ID, Name, Consultant, Client, Tjm, Bdc, Debut, Fin FROM contrat WHERE Consultant = ?`, consultant.ID).Iter()
 	for iter.Scan(&unique.ID, &unique.Name, &unique.ConsultantID, &unique.ClientID, &unique.Tjm, &unique.Bdc, &unique.Debut, &unique.Fin) {
-		unique.Client = RepoFindClient(unique.ClientID)
-		unique.Consultant = RepoFindConsultantByID(unique.ConsultantID)
+		unique.Client.ID = unique.ClientID
+		unique.Client.RepoFindClient()
+		unique.Consultant = consultant
 		list = append(list, unique)
 	}
 	if err := iter.Close(); err != nil {
@@ -81,35 +82,34 @@ func RepoContratsOneConsultant(id gocql.UUID) Contrats {
 }
 
 //RepoFindContrat find one client
-func RepoFindContrat(id gocql.UUID) Contrat {
+func (unique Contrat) RepoFindContrat() {
 
-	var unique Contrat
 	if err := session.Query(`SELECT ID, Name, Consultant, Client, Tjm, Bdc, Debut, Fin FROM contrat WHERE id = ?`,
-		id).Consistency(gocql.One).Scan(&unique.ID, &unique.Name, &unique.ConsultantID, &unique.ClientID, &unique.Tjm, &unique.Bdc, &unique.Debut, &unique.Fin); err != nil {
-		return Contrat{}
+		unique.ID).Consistency(gocql.One).Scan(&unique.ID, &unique.Name, &unique.ConsultantID, &unique.ClientID, &unique.Tjm, &unique.Bdc, &unique.Debut, &unique.Fin); err != nil {
+		unique = Contrat{}
 	}
 
-	unique.Client = RepoFindClient(unique.ClientID)
-	unique.Consultant = RepoFindConsultantByID(unique.ConsultantID)
-
-	// return empty Todo if not found
-	return unique
+	unique.Client.ID = unique.ClientID
+	unique.Client.RepoFindClient()
+	unique.Consultant.ID = unique.ConsultantID
+	unique.Consultant.RepoFindConsultant()
 }
 
 //RepoCreateContrat create client
-func RepoCreateContrat(unique Contrat) Contrat {
+func (unique Contrat) RepoCreateContrat() Contrat {
 
-	client := RepoFindClient(unique.ClientID)
+	var client Client
+	client.ID = unique.ClientID
+	client.RepoFindClient()
 	if (Client{}) == client {
 		return Contrat{}
 	}
 	unique.Client = client
-
-	consultant := RepoFindConsultantByID(unique.ConsultantID)
-	if (Consultant{}) == consultant {
+	unique.Consultant.ID = unique.ConsultantID
+	unique.Consultant.RepoFindConsultant()
+	if (Consultant{}) == unique.Consultant {
 		return Contrat{}
 	}
-	unique.Consultant = consultant
 
 	unique.ID = gocql.TimeUUID()
 	if err := session.Query(`INSERT INTO Contrat (ID, Name, Consultant, Client, Tjm, Bdc, Debut, Fin) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -120,9 +120,9 @@ func RepoCreateContrat(unique Contrat) Contrat {
 	return unique
 }
 
-func RepoDestroyContrat(id gocql.UUID) error {
+func (unique Contrat) RepoDestroyContrat() error {
 
 	//Todo
 
-	return fmt.Errorf("Could not find Client with id of %d to delete", id)
+	return fmt.Errorf("Could not find Client with id of %d to delete", unique.ID)
 }

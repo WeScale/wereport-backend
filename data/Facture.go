@@ -28,29 +28,30 @@ func init() {
 func RepoFindFactures(year int, month int) Factures {
 
 	//get all reports for one month
-	reports := RepoReports(year, month)
+	var reports Reports
+	reports.RepoReports(year, month)
 
 	mFacture := make(map[string]Facture)
 	//for all report
 	for _, report := range reports {
 		for _, day := range report.Days {
 			//si le contrat n'est pas dans la liste
-			if mFacture[day.ContratData.Bdc] == (Facture{}) {
-				mFacture[day.ContratData.Bdc] = Facture{
-					Contrat:  day.ContratData,
+			if mFacture[day.Contrat.Bdc] == (Facture{}) {
+				mFacture[day.Contrat.Bdc] = Facture{
+					Contrat:  day.Contrat,
 					Days:     day.Time,
-					Cost:     (day.Time * day.ContratData.Tjm),
+					Cost:     (day.Time * day.Contrat.Tjm),
 					Creation: time.Now(),
-					Bdc:      day.ContratData.Bdc,
+					Bdc:      day.Contrat.Bdc,
 				}
 
 			} else { //si le contrat est dans la liste
-				mFacture[day.ContratData.Bdc] = Facture{
-					Contrat:  day.ContratData,
-					Days:     (mFacture[day.ContratData.Bdc].Days + (day.Time)),
-					Cost:     (mFacture[day.ContratData.Bdc].Cost + (day.Time * day.ContratData.Tjm)),
+				mFacture[day.Contrat.Bdc] = Facture{
+					Contrat:  day.Contrat,
+					Days:     (mFacture[day.Contrat.Bdc].Days + (day.Time)),
+					Cost:     (mFacture[day.Contrat.Bdc].Cost + (day.Time * day.Contrat.Tjm)),
 					Creation: time.Now(),
-					Bdc:      day.ContratData.Bdc,
+					Bdc:      day.Contrat.Bdc,
 				}
 			}
 		}

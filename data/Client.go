@@ -29,60 +29,49 @@ func init() {
 	}
 
 	var wescale Client
-	wescale = RepoFindClientByName("WeScale")
+	wescale.Name = "WeScale"
+	wescale.RepoFindClient()
 	if wescale == (Client{}) {
-		wescale = RepoCreateClient(Client{
+		wescale = Client{
 			Name:    "WeScale",
 			Service: "internal",
-		})
+		}.RepoCreateClient()
 	}
 }
 
-func RepoClients() Clients {
+func (t Clients) RepoClients() {
 
 	var client Client
-	var list Clients
 
 	iter := session.Query(`SELECT ID, Name, Service, Creation FROM client`).Iter()
 	for iter.Scan(&client.ID, &client.Name, &client.Service, &client.Creation) {
-		list = append(list, client)
+		t = append(t, client)
 	}
 	if err := iter.Close(); err != nil {
 		log.Fatal(err)
 	}
-
-	return list
 }
 
 //RepoFindClient find one client
-func RepoFindClient(id gocql.UUID) Client {
+func (t Client) RepoFindClient() {
 
-	var client Client
-	if err := session.Query(`SELECT ID, Name, Service, Creation FROM client WHERE ID = ? `,
-		id).Consistency(gocql.One).Scan(&client.ID, &client.Name, &client.Service, &client.Creation); err != nil {
-		log.Println("not find client", err, id)
-		return Client{}
+	if len(t.Name) > 0 {
+		if err := session.Query(`SELECT ID, Name, Service, Creation FROM client WHERE ID = ? `,
+			t.ID).Consistency(gocql.One).Scan(t.ID, t.Name, t.Service, t.Creation); err != nil {
+			log.Println("not find client", err, t.ID)
+			t = Client{}
+		}
+	} else {
+		if err := session.Query(`SELECT ID, Name, Service, Creation FROM client WHERE Name = ? `,
+			t.Name).Consistency(gocql.One).Scan(t.ID, t.Name, t.Service, t.Creation); err != nil {
+			log.Println("not find client", err, t.Name)
+			t = Client{}
+		}
 	}
-
-	// return empty Todo if not found
-	return client
-}
-
-//RepoFindClient find one client
-func RepoFindClientByName(name string) Client {
-
-	var client Client
-	if err := session.Query(`SELECT ID, Name, Service, Creation FROM client WHERE Name = ? `,
-		name).Consistency(gocql.One).Scan(&client.ID, &client.Name, &client.Service, &client.Creation); err != nil {
-		return Client{}
-	}
-
-	// return empty Todo if not found
-	return client
 }
 
 //RepoCreateClient create client
-func RepoCreateClient(t Client) Client {
+func (t Client) RepoCreateClient() Client {
 
 	t.ID = gocql.TimeUUID()
 	t.Creation = time.Now()
@@ -95,7 +84,7 @@ func RepoCreateClient(t Client) Client {
 	return t
 }
 
-func RepoDestroyClient(id gocql.UUID) error {
+func (t Client) RepoDestroyClient() error {
 
 	//DELETE FROM Persons WHERE familyname='BARON';
 	return nil

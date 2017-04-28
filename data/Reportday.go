@@ -12,14 +12,14 @@ import (
 
 //Client ben un client quoi
 type ReportDay struct {
-	ID          gocql.UUID `json:"id"`
-	Contrat     gocql.UUID `json:"contrat"`
-	Report      gocql.UUID `json:"report"`
-	Owner       gocql.UUID `json:"day_owner"`
-	Day         int        `json:"day"`
-	Time        float32    `json:"time"`
-	Creation    time.Time  `json:"creation"`
-	ContratData Contrat    `json:"contrat_data"`
+	ID        gocql.UUID `json:"id"`
+	ContratID gocql.UUID `json:"contrat"`
+	Report    gocql.UUID `json:"report"`
+	Owner     gocql.UUID `json:"day_owner"`
+	Day       int        `json:"day"`
+	Time      float32    `json:"time"`
+	Creation  time.Time  `json:"creation"`
+	Contrat   Contrat    `json:"contrat_data"`
 }
 
 //Clients tous les clients
@@ -41,60 +41,54 @@ func init() {
 
 }
 
-func RepoReportDays(report gocql.UUID) ReportDays {
+func (list ReportDays) RepoReportDays(report gocql.UUID) {
 
 	var unique ReportDay
-	var list ReportDays
 
 	iter := session.Query(`SELECT ID, Contrat, Report, Owner, Day, Time, Creation FROM ReportDay WHERE Report = ?  ALLOW FILTERING`, report).Iter()
-	for iter.Scan(&unique.ID, &unique.Contrat, &unique.Report, &unique.Owner, &unique.Day, &unique.Time, &unique.Creation) {
-		unique.ContratData = RepoFindContrat(unique.Contrat)
+	for iter.Scan(&unique.ID, &unique.ContratID, &unique.Report, &unique.Owner, &unique.Day, &unique.Time, &unique.Creation) {
+		unique.Contrat.ID = unique.ContratID
+		unique.Contrat.RepoFindContrat()
 		list = append(list, unique)
 	}
 	if err := iter.Close(); err != nil {
 		log.Fatal(err)
 	}
-
-	return list
 }
 
 //RepoFindReportDay
-func RepoFindReportDay(report gocql.UUID, day int) ReportDays {
+func (list ReportDays) RepoFindReportDay(report gocql.UUID, day int) {
 
 	var unique ReportDay
-	var list ReportDays
 
 	iter := session.Query(`SELECT ID, Contrat, Report, Owner, Day, Time, Creation FROM ReportDay WHERE Report = ? AND Day = ? ALLOW FILTERING`, report, day).Iter()
-	for iter.Scan(&unique.ID, &unique.Contrat, &unique.Report, &unique.Owner, &unique.Day, &unique.Time, &unique.Creation) {
-		unique.ContratData = RepoFindContrat(unique.Contrat)
+	for iter.Scan(&unique.ID, &unique.ContratID, &unique.Report, &unique.Owner, &unique.Day, &unique.Time, &unique.Creation) {
+		unique.Contrat.ID = unique.ContratID
+		unique.Contrat.RepoFindContrat()
 		list = append(list, unique)
 	}
 	if err := iter.Close(); err != nil {
 		log.Println(err)
 	}
-
-	return list
 }
 
 //RepoFindOneReportDay
-func RepoFindOneReportDay(report gocql.UUID, day int, contrat gocql.UUID) ReportDay {
-	var unique ReportDay
+func (unique ReportDay) RepoFindOneReportDay(report gocql.UUID, day int, contrat gocql.UUID) {
 
 	if err := session.Query(`SELECT ID, Contrat, Report, Owner, Day, Time, Creation FROM ReportDay WHERE Report = ? AND Day = ? AND Contrat = ? ALLOW FILTERING`,
-		report, day, contrat).Consistency(gocql.One).Scan(&unique.ID, &unique.Contrat, &unique.Report, &unique.Owner, &unique.Day, &unique.Time, &unique.Creation); err != nil {
-		return ReportDay{}
+		report, day, contrat).Consistency(gocql.One).Scan(&unique.ID, &unique.ContratID, &unique.Report, &unique.Owner, &unique.Day, &unique.Time, &unique.Creation); err != nil {
+		unique = ReportDay{}
 	}
 
-	unique.ContratData = RepoFindContrat(unique.Contrat)
-
-	return unique
+	unique.Contrat.ID = unique.ContratID
+	unique.Contrat.RepoFindContrat()
 }
 
 //RepoCreateReportDay create client
-func RepoCreateReportDay(unique ReportDay) ReportDay {
+func (unique ReportDay) RepoCreateReportDay() {
 
 	var search ReportDays
-	search = RepoFindReportDay(unique.Report, unique.Day)
+	search.RepoFindReportDay(unique.Report, unique.Day)
 
 	var totalTime float32
 	if unique.Time != 0 {
@@ -105,11 +99,12 @@ func RepoCreateReportDay(unique ReportDay) ReportDay {
 	}
 
 	if totalTime < 1 {
-		repDay := RepoFindOneReportDay(unique.Report, unique.Day, unique.Contrat)
+		var repDay ReportDay
+		repDay.RepoFindOneReportDay(unique.Report, unique.Day, unique.ContratID)
 		if repDay == (ReportDay{}) {
 			unique.ID = gocql.TimeUUID()
 			if err := session.Query(`INSERT INTO ReportDay (ID, Contrat, Report, Owner, Day, Time, Creation) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-				&unique.ID, &unique.Contrat, &unique.Report, &unique.Owner, &unique.Day, &unique.Time, &unique.Creation).Exec(); err != nil {
+				&unique.ID, &unique.ContratID, &unique.Report, &unique.Owner, &unique.Day, &unique.Time, &unique.Creation).Exec(); err != nil {
 				log.Fatal(err)
 			}
 		} else {
@@ -121,12 +116,10 @@ func RepoCreateReportDay(unique ReportDay) ReportDay {
 	} else {
 		unique = ReportDay{}
 	}
-
-	return unique
 }
 
-func RepoDestroyReportDay(id gocql.UUID) error {
+func (unique ReportDay) RepoDestroyReportDay() error {
 
 	//Todo
-	return fmt.Errorf("Could not find Client with id of %d to delete", id)
+	return fmt.Errorf("Could not find Client with id of %d to delete", unique.ID)
 }

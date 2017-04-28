@@ -14,7 +14,7 @@ import (
 
 func GetConsultants(w http.ResponseWriter, r *http.Request) {
 	var consultants Data.Consultants
-	consultants = Data.RepoConsultants()
+	consultants.RepoConsultants()
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
@@ -30,7 +30,8 @@ func GetOneConsultant(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	var clt Data.Consultant
-	clt = Data.RepoFindConsultantByID(consultantID)
+	clt.ID = consultantID
+	clt.RepoFindConsultant()
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
@@ -56,9 +57,9 @@ func ConsultantCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	t := Data.RepoCreateConsultant(clt)
-	Websockets.ConsultantWebSocketSend(t)
-	consultantdata := MarshalHateoas(t)
+	clt.RepoCreateConsultant()
+	Websockets.ConsultantWebSocketSend(clt)
+	consultantdata := MarshalHateoas(clt)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(consultantdata); err != nil {

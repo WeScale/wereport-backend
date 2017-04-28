@@ -62,11 +62,11 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(resp.Body).Decode(&record); err != nil {
 		log.Println(err)
 	}
-
-	consultant = Data.RepoFindConsultantByEmail(record.Email)
+	consultant.Email = record.Email
+	consultant.RepoFindConsultant()
 	if consultant == (Data.Consultant{}) {
 		log.Println("First connexion of", record.Email)
-		consultant = Data.RepoCreateConsultant(Data.Consultant{FirstName: record.GivenName, LastName: record.FamillyName, Email: record.Email})
+		Data.Consultant{FirstName: record.GivenName, LastName: record.FamillyName, Email: record.Email}.RepoCreateConsultant()
 	}
 
 	record.WeReportID = consultant.ID

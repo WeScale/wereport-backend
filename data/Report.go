@@ -6,29 +6,19 @@ import (
 	"time"
 
 	"github.com/gocql/gocql"
-	"github.com/rickar/cal"
 )
 
 //Client ben un mois quoi
 type Report struct {
-	ID         gocql.UUID  `json:"id"`
-	Consultant gocql.UUID  `json:"consultant"`
-	Year       int         `json:"year"`
-	Month      int         `json:"month"`
-	Creation   time.Time   `json:"creation"`
-	Days       []ReportDay `json:"days"`
+	ID         gocql.UUID `json:"id"`
+	Consultant gocql.UUID `json:"consultant"`
+	Year       int        `json:"year"`
+	Month      int        `json:"month"`
+	Creation   time.Time  `json:"creation"`
+	Days       ReportDays `json:"days"`
 }
 
-type ViewReport struct {
-	ID       gocql.UUID `json:"id"`
-	Contrat  Contrat    `json:"contrat"`
-	ListDays []float32  `json:"list_days"`
-}
-
-type ViewReports []ViewReport
 type Reports []Report
-
-var calendar = createCalendar()
 
 //REATE TABLE IF NOT EXISTS we.report(id UUID, reportday UUID, month int
 func init() {
@@ -51,160 +41,68 @@ func init() {
 	}
 }
 
-func createCalendar() *cal.Calendar {
-	calendar := cal.NewCalendar()
-
-	// add holidays for the business
-	calendar.AddHoliday(cal.ECB_NewYearsDay)
-	calendar.AddHoliday(cal.ECB_EasterMonday)
-	calendar.AddHoliday(cal.DE_TagderArbeit)
-	calendar.AddHoliday(cal.NewHoliday(time.May, 8))
-	//jeudi de l'acension :/
-	calendar.AddHoliday(cal.DE_Himmelfahrt)
-	//lundi de pentecote :/
-	calendar.AddHoliday(cal.DE_Pfingstmontag)
-
-	calendar.AddHoliday(cal.NewHoliday(time.July, 14))
-	calendar.AddHoliday(cal.NewHoliday(time.August, 15))
-	calendar.AddHoliday(cal.NewHoliday(time.November, 1))
-	calendar.AddHoliday(cal.NewHoliday(time.November, 11))
-	calendar.AddHoliday(cal.US_Christmas)
-
-	return calendar
-}
-
-func daysIn(m time.Month, year int) int {
-	// This is equivalent to time.daysIn(m, year).
-	return time.Date(year, m+1, 0, 0, 0, 0, 0, time.UTC).Day()
-}
-
-//ChangeDataType toto
-func ChangeDataType(clt Report, consultantid gocql.UUID) ViewReports {
-	var data ViewReports
-
-	m := make(map[string]bool)
-	for _, element := range clt.Days {
-		if m[element.Contrat.String()] == false { // si c'est la premiere fois qu'on a le client, le client n'existe pas
-			m[element.Contrat.String()] = true
-			var listDay = make([]float32, daysIn(time.Month(clt.Month), clt.Year))
-			for i := 0; i < daysIn(time.Month(clt.Month), clt.Year); i++ {
-				listDay[i] = 0
-			}
-			listDay[element.Day-1] = element.Time
-			data = append(data, ViewReport{ID: element.Report, Contrat: element.ContratData, ListDays: listDay})
-		} else { //si le client existe
-			for _, report := range data {
-				if report.Contrat.ID == element.Contrat {
-					report.ListDays[element.Day-1] = element.Time
-				}
-			}
-		}
-	}
-	contrats := RepoContratsOneConsultant(consultantid)
-	for _, contrat := range contrats {
-		var test bool
-		test = false
-		for _, report := range data {
-			if report.Contrat.ID == contrat.ID {
-				test = true
-			}
-		}
-		if test == false {
-			var listDay = make([]float32, daysIn(time.Month(clt.Month), clt.Year))
-			for i := 0; i < daysIn(time.Month(clt.Month), clt.Year); i++ {
-				listDay[i] = 0
-			}
-			data = append(data, ViewReport{ID: clt.ID, Contrat: contrat, ListDays: listDay})
-		}
-	}
-	//add weekend
-	var listDay = make([]float32, daysIn(time.Month(clt.Month), clt.Year))
-	for i := 0; i < daysIn(time.Month(clt.Month), clt.Year); i++ {
-		location, _ := time.LoadLocation("Europe/Paris")
-		testdate := time.Date(clt.Year, time.Month(clt.Month), (i + 1), 0, 0, 0, 0, location)
-		if calendar.IsWorkday(testdate) {
-			listDay[i] = 0
-		} else {
-			listDay[i] = 1
-		}
-	}
-	data = append(data, ViewReport{ID: gocql.TimeUUID(), Contrat: Contrat{Name: "nonworkday"}, ListDays: listDay})
-
-	return data
-
-}
-
-func RepoReports(year int, month int) Reports {
+func (list Reports) RepoReports(year int, month int) {
 
 	var unique Report
-	var list Reports
 
 	iter := session.Query(`SELECT ID, Consultant, Year, Month FROM Report WHERE Year = ? AND Month = ? ALLOW FILTERING`, year, month).Iter()
 	for iter.Scan(&unique.ID, &unique.Consultant, &unique.Year, &unique.Month) {
-		unique.Days = RepoReportDays(unique.ID)
+		unique.Days.RepoReportDays(unique.ID)
 		list = append(list, unique)
 	}
 	if err := iter.Close(); err != nil {
 		log.Fatal(err)
 	}
-	return list
 }
 
 //RepoFindReport find one client
-func RepoFindReport(year int, month int, consultantid gocql.UUID) Report {
-
-	var unique Report
+func (unique Report) RepoFindReport(year int, month int, consultant Consultant) {
 
 	if err := session.Query(`SELECT ID, Consultant, Year, Month FROM Report WHERE Year = ? AND Month = ? AND Consultant = ? ALLOW FILTERING`,
-		year, month, consultantid).Consistency(gocql.One).Scan(&unique.ID, &unique.Consultant, &unique.Year, &unique.Month); err != nil {
-		unique = CreateEmptyReport(year, month, consultantid)
+		year, month, consultant.ID).Consistency(gocql.One).Scan(&unique.ID, &unique.Consultant, &unique.Year, &unique.Month); err != nil {
+		unique.CreateEmptyReport(year, month, consultant)
 	}
-	unique.Days = RepoReportDays(unique.ID)
-	return unique
+	unique.Days.RepoReportDays(unique.ID)
 }
 
 //RepoCreateReport create client
-func RepoCreateReport(unique Report) Report {
+func (unique Report) RepoCreateReport() {
 
 	unique.ID = gocql.TimeUUID()
 	if err := session.Query(`INSERT INTO Report (ID, Consultant, Year, Month) VALUES (?, ?, ?, ?)`,
 		&unique.ID, &unique.Consultant, &unique.Year, &unique.Month).Exec(); err != nil {
 		log.Fatal(err)
+		unique = Report{}
 	}
-
-	return unique
 }
 
-func RepoDestroyReport(id gocql.UUID) error {
+func (unique Report) RepoDestroyReport() error {
 
 	//Todo
 
-	return fmt.Errorf("Could not find Client with id of %d to delete", id)
+	return fmt.Errorf("Could not find Client with id of %d to delete", unique.ID)
 }
 
-func CreateEmptyReport(year int, month int, consultantid gocql.UUID) Report {
-	var ret Report
+func (unique Report) CreateEmptyReport(year int, month int, consultant Consultant) {
 
-	ret.Consultant = consultantid
-	ret.Creation = time.Now()
-	ret.Month = month
-	ret.Year = year
+	unique.Consultant = consultant.ID
+	unique.Creation = time.Now()
+	unique.Month = month
+	unique.Year = year
 
-	ret = RepoCreateReport(ret)
+	unique.RepoCreateReport()
 
 	var contrats Contrats
-	contrats = RepoContratsOneConsultant(consultantid)
+	contrats = consultant.RepoContrats()
 
 	for i, element := range contrats {
 		var retDay ReportDay
 
 		retDay.Day = (i + 1)
-		retDay.Report = ret.ID
+		retDay.Report = unique.ID
 		retDay.Time = 0
-		retDay.Contrat = element.ID
-		retDay.ContratData = element
-		RepoCreateReportDay(retDay)
+		retDay.ContratID = element.ID
+		retDay.Contrat = element
+		retDay.RepoCreateReportDay()
 	}
-
-	return ret
 }

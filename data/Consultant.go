@@ -62,10 +62,9 @@ func init() {
 	}
 }
 
-func RepoConsultants() Consultants {
+func (list Consultants) RepoConsultants() {
 
 	var unique Consultant
-	var list Consultants
 
 	iter := session.Query(`SELECT ID, FirstName, LastName, Email, Profil FROM consultant`).Iter()
 	for iter.Scan(&unique.ID, &unique.FirstName, &unique.LastName, &unique.Email, &unique.Profil) {
@@ -74,40 +73,27 @@ func RepoConsultants() Consultants {
 	if err := iter.Close(); err != nil {
 		log.Fatal(err)
 	}
-	return list
 }
 
-//RepoFindConsultantByID find one client
-func RepoFindConsultantByID(id gocql.UUID) Consultant {
-
-	var unique Consultant
-	if err := session.Query(`SELECT ID, FirstName, LastName, Email, Profil FROM consultant WHERE ID = ? `,
-		id).Consistency(gocql.One).Scan(&unique.ID, &unique.FirstName, &unique.LastName, &unique.Email, &unique.Profil); err != nil {
-		log.Println("find consultant", err, id)
-
-		return Consultant{}
+//RepoFindConsultantByID find one consultant
+func (unique Consultant) RepoFindConsultant() {
+	if len(unique.Email) > 0 {
+		if err := session.Query(`SELECT ID, FirstName, LastName, Email, Profil FROM consultant WHERE Email = ? `,
+			unique.Email).Consistency(gocql.One).Scan(&unique.ID, &unique.FirstName, &unique.LastName, &unique.Email, &unique.Profil); err != nil {
+			log.Println("cannot find consultant", err, unique.Email)
+			unique = Consultant{}
+		}
+	} else {
+		if err := session.Query(`SELECT ID, FirstName, LastName, Email, Profil FROM consultant WHERE ID = ? `,
+			unique.ID).Consistency(gocql.One).Scan(&unique.ID, &unique.FirstName, &unique.LastName, &unique.Email, &unique.Profil); err != nil {
+			log.Println("cannot find consultant", err, unique.ID)
+			unique = Consultant{}
+		}
 	}
-
-	// return empty Todo if not found
-	return unique
-}
-
-//RepoFindConsultantByEmail find one client
-func RepoFindConsultantByEmail(email string) Consultant {
-
-	var unique Consultant
-	if err := session.Query(`SELECT ID, FirstName, LastName, Email, Profil FROM consultant WHERE Email = ? `,
-		email).Consistency(gocql.One).Scan(&unique.ID, &unique.FirstName, &unique.LastName, &unique.Email, &unique.Profil); err != nil {
-		log.Println(err)
-		return Consultant{}
-	}
-
-	// return empty Todo if not found
-	return unique
 }
 
 //RepoCreateConsultant create client
-func RepoCreateConsultant(unique Consultant) Consultant {
+func (unique Consultant) RepoCreateConsultant() {
 
 	unique.ID = gocql.TimeUUID()
 
@@ -130,77 +116,76 @@ func RepoCreateConsultant(unique Consultant) Consultant {
 	}
 
 	var wescale Client
-	wescale = RepoFindClientByName("WeScale")
+	wescale.Name = "WeScale"
+	wescale.RepoFindClient()
 
-	RepoCreateContrat(Contrat{
+	Contrat{
 		Name:         "RTT",
 		Tjm:          0,
 		Bdc:          "NA",
 		Debut:        time.Now(),
 		ClientID:     wescale.ID,
 		ConsultantID: unique.ID,
-	})
+	}.RepoCreateContrat()
 
-	RepoCreateContrat(Contrat{
+	Contrat{
 		Name:         "Congé Payé",
 		Tjm:          0,
 		Bdc:          "NA",
 		Debut:        time.Now(),
 		ClientID:     wescale.ID,
 		ConsultantID: unique.ID,
-	})
+	}.RepoCreateContrat()
 
-	RepoCreateContrat(Contrat{
+	Contrat{
 		Name:         "Congé Maladie",
 		Tjm:          0,
 		Bdc:          "NA",
 		Debut:        time.Now(),
 		ClientID:     wescale.ID,
 		ConsultantID: unique.ID,
-	})
+	}.RepoCreateContrat()
 
-	RepoCreateContrat(Contrat{
+	Contrat{
 		Name:         "Absence",
 		Tjm:          0,
 		Bdc:          "NA",
 		Debut:        time.Now(),
 		ClientID:     wescale.ID,
 		ConsultantID: unique.ID,
-	})
+	}.RepoCreateContrat()
 
-	RepoCreateContrat(Contrat{
+	Contrat{
 		Name:         "WeShare & Conf",
 		Tjm:          0,
 		Bdc:          "NA",
 		Debut:        time.Now(),
 		ClientID:     wescale.ID,
 		ConsultantID: unique.ID,
-	})
+	}.RepoCreateContrat()
 
-	RepoCreateContrat(Contrat{
+	Contrat{
 		Name:         "Formation",
 		Tjm:          0,
 		Bdc:          "NA",
 		Debut:        time.Now(),
 		ClientID:     wescale.ID,
 		ConsultantID: unique.ID,
-	})
+	}.RepoCreateContrat()
 
-	RepoCreateContrat(Contrat{
+	Contrat{
 		Name:         "Intercontrat",
 		Tjm:          0,
 		Bdc:          "NA",
 		Debut:        time.Now(),
 		ClientID:     wescale.ID,
 		ConsultantID: unique.ID,
-	})
-
-	return unique
+	}.RepoCreateContrat()
 }
 
-func RepoDestroyConsultant(id gocql.UUID) error {
+func (unique Consultant) RepoDestroyConsultant() error {
 
 	//Todo
 
-	return fmt.Errorf("Could not find Client with id of %d to delete", id)
+	return fmt.Errorf("Could not find Client with id of %d to delete", unique.ID)
 }

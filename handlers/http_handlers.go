@@ -44,7 +44,9 @@ func Logger(inner http.Handler, name string) http.Handler {
 			}
 
 			if strings.EqualFold("wescale.fr", record.Hd) {
-				consultant := Data.RepoFindConsultantByEmail(record.Email)
+				var consultant Data.Consultant
+				consultant.Email = record.Email
+				consultant.RepoFindConsultant()
 				context.Set(r, UserData, consultant)
 				inner.ServeHTTP(w, r)
 			} else {

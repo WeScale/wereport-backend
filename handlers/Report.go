@@ -21,7 +21,7 @@ func GetReports(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	var clt Data.Reports
-	clt = Data.RepoReports(year, month)
+	clt.RepoReports(year, month)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
@@ -39,10 +39,13 @@ func GetReportsOneConsultant(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	var clt Data.Report
-	clt = Data.RepoFindReport(year, month, consultantid)
+	var consultant Data.Consultant
+	consultant.ID = consultantid
+	consultant.RepoFindConsultant()
+	clt.RepoFindReport(year, month, consultant)
 
 	var cltData Data.ViewReports
-	cltData = Data.ChangeDataType(clt, consultantid)
+	cltData = Data.ChangeDataType(clt, consultant)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
@@ -68,12 +71,12 @@ func ReportCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	t := Data.RepoCreateReport(clt)
+	clt.RepoCreateReport()
 	Websockets.ReportWebSocketSend(clt)
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(t); err != nil {
+	if err := json.NewEncoder(w).Encode(clt); err != nil {
 		panic(err)
 	}
 }
