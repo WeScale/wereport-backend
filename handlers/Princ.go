@@ -64,9 +64,11 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 	}
 	consultant.Email = record.Email
 	consultant.RepoFindConsultant()
+
 	if consultant == (Data.Consultant{}) {
 		log.Println("First connexion of", record.Email)
 		Data.Consultant{FirstName: record.GivenName, LastName: record.FamillyName, Email: record.Email}.RepoCreateConsultant()
+		consultant.RepoFindConsultant()
 	}
 
 	record.WeReportID = consultant.ID
