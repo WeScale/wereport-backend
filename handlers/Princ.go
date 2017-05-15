@@ -67,8 +67,8 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 
 	if consultant == (Data.Consultant{}) {
 		log.Println("First connexion of", record.Email)
-		Data.Consultant{FirstName: record.GivenName, LastName: record.FamillyName, Email: record.Email}.RepoCreateConsultant()
-		consultant.RepoFindConsultant()
+		consultant = Data.Consultant{FirstName: record.GivenName, LastName: record.FamillyName, Email: record.Email}
+		consultant.RepoCreateConsultant()
 	}
 
 	log.Println("Connexion of ", consultant)
