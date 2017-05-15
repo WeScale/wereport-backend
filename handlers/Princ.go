@@ -71,6 +71,7 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 		consultant.RepoFindConsultant()
 	}
 
+	log.Println("Connexion of ", consultant)
 	record.WeReportID = consultant.ID
 	record.Profil = consultant.Profil.String()
 
