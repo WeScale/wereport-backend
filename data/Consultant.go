@@ -110,7 +110,7 @@ func (unique Consultant) RepoCreateConsultant() {
 		unique.Profil = CONSULTANT
 	}
 
-	log.Println("Profil add: ", unique.Profil)
+	log.Println("Profil add: ", unique)
 
 	if err := session.Query(`INSERT INTO consultant (ID, FirstName, LastName, Email, Profil) VALUES (?, ?, ?, ?, ?)`,
 		unique.ID, unique.FirstName, unique.LastName, unique.Email, unique.Profil).Exec(); err != nil {
