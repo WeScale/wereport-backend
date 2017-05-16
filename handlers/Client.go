@@ -57,9 +57,9 @@ func ClientCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	t := client.RepoCreateClient()
-	Websockets.ClientWebSocketSend(t)
-	clientdata := MarshalHateoas(t)
+	client.RepoCreateClient()
+	Websockets.ClientWebSocketSend(client)
+	clientdata := MarshalHateoas(client)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(clientdata); err != nil {

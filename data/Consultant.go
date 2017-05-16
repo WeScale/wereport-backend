@@ -62,13 +62,13 @@ func init() {
 	}
 }
 
-func (list Consultants) RepoConsultants() {
+func (list *Consultants) RepoConsultants() {
 
 	var unique Consultant
 
 	iter := session.Query(`SELECT ID, FirstName, LastName, Email, Profil FROM consultant`).Iter()
 	for iter.Scan(&unique.ID, &unique.FirstName, &unique.LastName, &unique.Email, &unique.Profil) {
-		list = append(list, unique)
+		*list = append(*list, unique)
 	}
 	if err := iter.Close(); err != nil {
 		log.Fatal(err)
@@ -76,18 +76,20 @@ func (list Consultants) RepoConsultants() {
 }
 
 //RepoFindConsultantByID find one consultant
-func (unique Consultant) RepoFindConsultant() {
+func (unique *Consultant) RepoFindConsultant() {
 	if len(unique.Email) > 0 {
 		if err := session.Query(`SELECT ID, FirstName, LastName, Email, Profil FROM consultant WHERE Email = ? `,
 			unique.Email).Consistency(gocql.One).Scan(&unique.ID, &unique.FirstName, &unique.LastName, &unique.Email, &unique.Profil); err != nil {
 			log.Println("cannot find consultant", err, unique.Email)
-			unique = Consultant{}
+			tmp := Consultant{}
+			unique = &tmp
 		}
 	} else {
 		if err := session.Query(`SELECT ID, FirstName, LastName, Email, Profil FROM consultant WHERE ID = ? `,
 			unique.ID).Consistency(gocql.One).Scan(&unique.ID, &unique.FirstName, &unique.LastName, &unique.Email, &unique.Profil); err != nil {
 			log.Println("cannot find consultant", err, unique.ID)
-			unique = Consultant{}
+			tmp := Consultant{}
+			unique = &tmp
 		}
 	}
 }
@@ -100,17 +102,19 @@ func (unique Consultant) RepoCreateConsultant() {
 	switch unique.Email {
 	case "slemesle@wescale.fr":
 		unique.Profil = DIRECTION
+		break
 	case "celine.rochay@wescale.fr":
 		unique.Profil = DIRECTION
+		break
 	case "sebastien.lavayssiere@wescale.fr":
 		unique.Profil = ADMINISTRATOR
+		break
 	case "aurelien.maury@wescale.fr":
 		unique.Profil = MANAGER
+		break
 	default:
 		unique.Profil = CONSULTANT
 	}
-
-	log.Println("Profil add: ", unique)
 
 	if err := session.Query(`INSERT INTO consultant (ID, FirstName, LastName, Email, Profil) VALUES (?, ?, ?, ?, ?)`,
 		unique.ID, unique.FirstName, unique.LastName, unique.Email, unique.Profil).Exec(); err != nil {

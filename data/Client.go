@@ -31,21 +31,23 @@ func init() {
 	var wescale Client
 	wescale.Name = "WeScale"
 	wescale.RepoFindClient()
-	if wescale == (Client{}) {
+
+	if wescale.ID == (gocql.UUID{}) {
 		wescale = Client{
 			Name:    "WeScale",
 			Service: "internal",
-		}.RepoCreateClient()
+		}
+		wescale.RepoCreateClient()
 	}
 }
 
-func (t Clients) RepoClients() {
+func (t *Clients) RepoClients() {
 
 	var client Client
 
 	iter := session.Query(`SELECT ID, Name, Service, Creation FROM client`).Iter()
 	for iter.Scan(&client.ID, &client.Name, &client.Service, &client.Creation) {
-		t = append(t, client)
+		*t = append(*t, client)
 	}
 	if err := iter.Close(); err != nil {
 		log.Fatal(err)
@@ -53,25 +55,28 @@ func (t Clients) RepoClients() {
 }
 
 //RepoFindClient find one client
-func (t Client) RepoFindClient() {
+func (t *Client) RepoFindClient() {
 
 	if len(t.Name) > 0 {
-		if err := session.Query(`SELECT ID, Name, Service, Creation FROM client WHERE ID = ? `,
-			t.ID).Consistency(gocql.One).Scan(t.ID, t.Name, t.Service, t.Creation); err != nil {
+		log.Println("Search client: ", t.Name)
+		if err := session.Query(`SELECT ID, Name, Service, Creation FROM client WHERE Name = ? `,
+			t.Name).Consistency(gocql.One).Scan(&t.ID, &t.Name, &t.Service, &t.Creation); err != nil {
 			log.Println("not find client", err, t.ID)
-			t = Client{}
+			tmp := Client{}
+			t = &tmp
 		}
 	} else {
-		if err := session.Query(`SELECT ID, Name, Service, Creation FROM client WHERE Name = ? `,
-			t.Name).Consistency(gocql.One).Scan(t.ID, t.Name, t.Service, t.Creation); err != nil {
+		if err := session.Query(`SELECT ID, Name, Service, Creation FROM client WHERE ID = ? `,
+			t.ID).Consistency(gocql.One).Scan(&t.ID, &t.Name, &t.Service, &t.Creation); err != nil {
 			log.Println("not find client", err, t.Name)
-			t = Client{}
+			tmp := Client{}
+			t = &tmp
 		}
 	}
 }
 
 //RepoCreateClient create client
-func (t Client) RepoCreateClient() Client {
+func (t *Client) RepoCreateClient() {
 
 	t.ID = gocql.TimeUUID()
 	t.Creation = time.Now()
@@ -80,8 +85,6 @@ func (t Client) RepoCreateClient() Client {
 		t.ID, t.Name, t.Service, t.Creation).Exec(); err != nil {
 		log.Fatal(err)
 	}
-
-	return t
 }
 
 func (t Client) RepoDestroyClient() error {

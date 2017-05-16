@@ -4,7 +4,7 @@
 ### Prerequisite
 This project need cassandra DB to be launch
 ```
-docker run --name some-cassandra -d cassandra
+docker run --name some-cassandra -p 9042:9042 -d cassandra
 ```
 
 ### Build and launch localy
